@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NQ Buff System</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+        :root {
+            --bg-color: #0b1120;
+            --primary: #8b5cf6;
+            --secondary: #3b82f6;
+            --accent: #ec4899;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Nunito', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            padding: 20px;
+        }
+
+        #snow-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: 
+                radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.15), transparent 40%),
+                radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.15), transparent 40%);
+            z-index: -2;
+            animation: rotateBg 20s linear infinite;
+        }
+
+        @keyframes rotateBg {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 380px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+            position: relative;
+            margin-top: 20px;
+        }
+
+        .avatar-box {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--primary), var(--secondary));
+            padding: 3px;
+            box-shadow: 0 0 25px rgba(139, 92, 246, 0.6);
+            margin-bottom: 15px;
+            position: relative;
+            flex-shrink: 0;
+        }
+        
+        .avatar-box img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            background-color: #000;
+            border: 2px solid var(--bg-color);
+        }
+
+        .title {
+            font-size: 1.8rem;
+            font-weight: 900;
+            margin: 0 0 5px 0;
+            text-align: center;
+            background: linear-gradient(to right, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--primary);
+            margin-bottom: 25px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+        }
+
+        .form-wrapper {
+            width: 100%;
+            position: relative;
+            min-height: 300px;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 25px;
+            width: 100%;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
+        }
+
+        .card-hidden {
+            opacity: 0;
+            transform: scale(0.95) translateY(15px);
+            pointer-events: none;
+            visibility: hidden;
+        }
+        
+        .card-visible {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+            visibility: visible;
+        }
+
+        .input-field {
+            width: 100%;
+            margin-bottom: 15px;
+            position: relative;
+            text-align: left;
+        }
+
+        .input-field label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            margin-left: 5px;
+        }
+
+        .input-field input {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 16px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            outline: none;
+            transition: all 0.3s ease;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        .input-field input:focus {
+            border-color: var(--primary);
+            background: rgba(15, 23, 42, 0.9);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .input-field input::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+            font-weight: 600;
+        }
+
+        .btn-gradient {
+            width: 100%;
+            padding: 18px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-gradient:active { transform: scale(0.96); }
+        .btn-gradient:disabled { background: #334155; box-shadow: none; color: #64748b; transform: none; }
+
+        .btn-red {
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .status-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .circle-progress {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: conic-gradient(var(--primary) 0%, rgba(255,255,255,0.05) 0%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 25px;
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.2);
+            transition: background 0.3s;
+        }
+
+        .circle-inner {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            background: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .percent-text { font-size: 2.2rem; font-weight: 900; color: #fff; line-height: 1; }
+        .loading-text { font-size: 0.8rem; color: var(--text-muted); font-weight: 700; margin-top: 5px; }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 15px 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-item { text-align: center; }
+        .stat-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+        .stat-val { font-size: 1.2rem; font-weight: 900; }
+        .val-ok { color: var(--success); text-shadow: 0 0 10px var(--success); }
+        .val-err { color: var(--danger); text-shadow: 0 0 10px var(--danger); }
+
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            font-weight: 700;
+            letter-spacing: 1px;
+            opacity: 0.6;
+            z-index: 10;
+        }
+
+        .error-msg {
+            color: var(--danger);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 10px;
+            display: none;
+            animation: shake 0.4s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .admin-badge {
+            display: none;
+            background: var(--danger);
+            color: #fff;
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: 900;
+            vertical-align: middle;
+            margin-left: 5px;
+            box-shadow: 0 0 15px var(--danger);
+        }
+
+        .btn-logout {
+            background: none; border: none; color: var(--text-muted);
+            font-size: 0.8rem; text-decoration: underline;
+            margin-top: 15px; cursor: pointer; opacity: 0.5; width: 100%;
+            display: none;
+        }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <canvas id="snow-canvas"></canvas>
+
+    <div class="app-container">
+        
+        <div class="avatar-box">
+            <img src="https://i.imgur.com/C7jN77z.jpeg" alt="Avatar">
+        </div>
+        
+        <h1 class="title">NQ Buff System <span id="admin-badge" class="admin-badge">ADMIN</span></h1>
+        <div class="subtitle">Free Fire VIP Tool</div>
+
+        <div class="form-wrapper">
+            
+            <!-- KEY GATE -->
+            <div class="glass-card card-visible" id="key-card">
+                <div class="input-field">
+                    <label>Nhập Key Kích Hoạt</label>
+                    <input type="text" id="license-key" placeholder="Nhập Key..." autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
+                </div>
+                <div class="error-msg" id="key-error">Key không hợp lệ hoặc đã được sử dụng!</div>
+                <button class="btn-gradient btn-red" onclick="activateKey()">Xác Nhận</button>
+            </div>
+
+            <!-- MAIN FORM -->
+            <div class="glass-card card-hidden" id="form-card">
+                <div class="input-field">
+                    <label>ID Người Chơi (UID)</label>
+                    <input type="number" id="uid" placeholder="Nhập ID..." autocomplete="off">
+                </div>
+                <div class="input-field">
+                    <label>Máy Chủ (Region)</label>
+                    <input type="text" id="region" value="VN" placeholder="VN, IND, BR..." autocomplete="off">
+                </div>
+                <div class="input-field">
+                    <label>Số Lượng Like <span id="limit-label" style="color:var(--primary)">(Tối đa 50)</span></label>
+                    <input type="number" id="amount" value="50" placeholder="Nhập số lượng..." autocomplete="off">
+                </div>
+                <button class="btn-gradient" id="start-btn" onclick="startBuff()">Bắt Đầu Buff</button>
+                <button class="btn-logout" onclick="logout()">Đăng xuất Key</button>
+            </div>
+
+            <!-- LOADING / STATUS -->
+            <div class="glass-card card-hidden status-container" id="status-card">
+                <div class="circle-progress" id="circle">
+                    <div class="circle-inner">
+                        <div class="percent-text" id="percent-text">0%</div>
+                        <div class="loading-text">Đang buff...</div>
+                    </div>
+                </div>
+                
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div class="stat-label">Thành công</div>
+                        <div class="stat-val val-ok" id="stat-ok">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Thất bại</div>
+                        <div class="stat-val val-err" id="stat-err">0</div>
+                    </div>
+                </div>
+            </div>
+
+        </div> 
+
+    </div>
+
+    <div class="footer">admin by nam quoc</div>
+
+    <script>
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.shiftKey && e.key === 'C') || (e.ctrlKey && e.key === 'u')) e.preventDefault();
+        });
+
+        const canvas = document.getElementById('snow-canvas');
+        const ctx = canvas.getContext('2d');
+        let width = window.innerWidth; let height = window.innerHeight;
+        canvas.width = width; canvas.height = height;
+        const snowflakes = [];
+        
+        for (let i = 0; i < 120; i++) {
+            snowflakes.push({ x: Math.random() * width, y: Math.random() * height, radius: Math.random() * 2 + 0.5, speed: Math.random() * 1 + 0.3, wind: Math.random() * 0.6 - 0.3 });
+        }
+        
+        function drawSnow() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.beginPath();
+            for (let i = 0; i < snowflakes.length; i++) { let f = snowflakes[i]; ctx.moveTo(f.x, f.y); ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2, true); }
+            ctx.fill();
+            for (let i = 0; i < snowflakes.length; i++) {
+                let f = snowflakes[i];
+                f.y += f.speed; f.x += f.wind;
+                if (f.y > height + 10) { f.y = -10; f.x = Math.random() * width; }
+                if (f.x > width + 10) f.x = -10;
+                if (f.x < -10) f.x = width + 10;
+            }
+        }
+        setInterval(drawSnow, 30);
+        window.addEventListener('resize', () => { width = window.innerWidth; height = window.innerHeight; canvas.width = width; canvas.height = height; });
+
+        const VALID_KEYS = ["A7X92K", "B9M41Q", "C4P83Z", "D8K25R", "E2N67W", "F5R19Y", "G1T74M", "H6W32P", "J3Y85A", "K7Z26N", "L2A94X", "M8B51T", "N4C73Q", "P9D28V", "Q5E61K", "R1F47Z", "S6G93M", "T3H52W", "U7J18P", "V2K64A", "W8L39N", "X4M75R", "Y9N21T", "Z5P86Q", "A1Q43V", "B6R97K", "C3S52X", "D7T18M", "E2U64Z", "F8V31P", "G4W79A", "H9X25N", "J5Y68R", "K1Z42T", "L6A83Q", "M3B17V", "N7C59K", "P2D94X", "Q8E36M", "R4F71Z", "S9G28P", "T5H63A", "U1J47N", "V6K82R", "W3L19T", "X7M54Q", "Y2N96V", "Z8P31K", "A4Q75M", "B9R62X"];
+        const API_URL = "https://likesellerbdcom.vercel.app/like";
+        const API_KEY = "LEGENDBDX";
+
+        // Key Admin: namquocdeptraisuper (Chia làm 3 khúc để giấu)
+        function checkAdmin(str) {
+            const p1 = "namquoc";
+            const p2 = "deptrai";
+            const p3 = "super";
+            return str === (p1 + p2 + p3);
+        }
+
+        function switchCard(hideId, showId) {
+            document.getElementById(hideId).classList.replace('card-visible', 'card-hidden');
+            setTimeout(() => { document.getElementById(showId).classList.replace('card-hidden', 'card-visible'); }, 350); 
+        }
+
+        window.onload = function() {
+            const savedKey = localStorage.getItem('nq_activated_key');
+            if (savedKey) {
+                document.getElementById('key-card').classList.replace('card-visible', 'card-hidden');
+                document.getElementById('form-card').classList.replace('card-hidden', 'card-visible');
+                document.querySelector('.btn-logout').style.display = 'block';
+                
+                if (savedKey === 'ADMIN_VERIFIED') {
+                    document.getElementById('admin-badge').style.display = 'inline-block';
+                    document.getElementById('limit-label').innerText = '(Vô hạn)';
+                    document.getElementById('limit-label').style.color = 'var(--danger)';
+                    document.getElementById('amount').value = 500;
+                }
+            }
+        };
+
+        function activateKey() {
+            const input = document.getElementById('license-key').value.trim();
+            const errorMsg = document.getElementById('key-error');
+
+            if (checkAdmin(input)) {
+                localStorage.setItem('nq_activated_key', 'ADMIN_VERIFIED');
+                errorMsg.style.display = 'none';
+                switchCard('key-card', 'form-card');
+                document.querySelector('.btn-logout').style.display = 'block';
+                document.getElementById('admin-badge').style.display = 'inline-block';
+                document.getElementById('limit-label').innerText = '(Vô hạn)';
+                document.getElementById('limit-label').style.color = 'var(--danger)';
+                document.getElementById('amount').value = 500;
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 200]);
+            } else if (VALID_KEYS.includes(input.toUpperCase())) {
+                localStorage.setItem('nq_activated_key', 'NORMAL_VERIFIED');
+                errorMsg.style.display = 'none';
+                switchCard('key-card', 'form-card');
+                document.querySelector('.btn-logout').style.display = 'block';
+                if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+            } else {
+                errorMsg.style.display = 'block';
+                errorMsg.style.animation = 'none'; errorMsg.offsetHeight; errorMsg.style.animation = null; 
+                if (navigator.vibrate) navigator.vibrate(200);
+            }
+        }
+
+        function logout() {
+            if(confirm("Bạn có chắc muốn đăng xuất Key?")) {
+                localStorage.removeItem('nq_activated_key');
+                location.reload();
+            }
+        }
+
+        async function startBuff() {
+            const uid = document.getElementById('uid').value.trim();
+            const region = document.getElementById('region').value.trim().toUpperCase() || "VN";
+            let amount = parseInt(document.getElementById('amount').value);
+            const isAdmin = (localStorage.getItem('nq_activated_key') === 'ADMIN_VERIFIED');
+            
+            if (!isAdmin && amount > 50) {
+                amount = 50; document.getElementById('amount').value = 50;
+                alert("Key thường chỉ được buff tối đa 50 like/lần!");
+            }
+
+            if (!uid || isNaN(amount) || amount <= 0) {
+                if (navigator.vibrate) navigator.vibrate(100);
+                alert("Vui lòng nhập đầy đủ UID và Số lượng hợp lệ!"); return;
+            }
+
+            switchCard('form-card', 'status-card');
+
+            let success = 0; let error = 0; let done = 0;
+            const circle = document.getElementById('circle');
+
+            const updateUI = () => {
+                done = success + error;
+                const percent = Math.floor((done / amount) * 100);
+                circle.style.background = `conic-gradient(var(--primary) ${percent}%, rgba(255,255,255,0.05) ${percent}%)`;
+                document.getElementById('percent-text').innerText = `${percent}%`;
+                document.getElementById('stat-ok').innerText = success;
+                document.getElementById('stat-err').innerText = error;
+            };
+
+            const sendRequest = async () => {
+                try {
+                    const response = await fetch(`${API_URL}?uid=${uid}&server_name=${region}&key=${API_KEY}`, { method: 'GET' });
+                    if (response.ok) success++; else error++;
+                } catch (e) { error++; }
+                updateUI();
+            };
+
+            const BATCH_SIZE = isAdmin ? 10 : 5;
+            const DELAY = isAdmin ? 100 : 200;
+            
+            for (let i = 0; i < amount; i += BATCH_SIZE) {
+                const batch = [];
+                for (let j = 0; j < BATCH_SIZE && (i + j) < amount; j++) { batch.push(sendRequest()); }
+                await Promise.all(batch);
+                await new Promise(r => setTimeout(r, DELAY)); 
+            }
+
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            document.querySelector('.loading-text').innerText = "Hoàn tất!";
+            
+            setTimeout(() => {
+                switchCard('status-card', 'form-card');
+                document.querySelector('.loading-text').innerText = "Đang buff...";
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
